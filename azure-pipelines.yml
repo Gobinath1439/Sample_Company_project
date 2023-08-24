@@ -64,11 +64,10 @@ jobs:
       DeploymentType: 'webDeploy'
     displayName: 'Deploy to Azure Web App'
 
-
   - script: |
     $backupDir = "D:\Backup\$(Build.DefinitionName)_$(Build.BuildId)"
     if (Test-Path $backupDir) {
-      Remove-Item -Recurse -Force $backupDir
+    Remove-Item -Recurse -Force $backupDir
     }
     Copy-Item -Path "D:\home\site\wwwroot\*" -Destination $backupDir -Recurse
   displayName: 'Backup Previous Version'
