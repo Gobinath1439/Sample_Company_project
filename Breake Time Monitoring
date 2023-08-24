@@ -1,0 +1,98 @@
+using System;
+using System.Collections.Generic;
+
+namespace AttendanceMonitoringApp
+{
+    class Program
+    {
+        static Dictionary<string, Employee> employees = new Dictionary<string, Employee>();
+
+        static void Main(string[] args)
+        {
+            // Simulate adding employees to the system
+            employees.Add("emp1", new Employee("John Doe", "emp1", "password", new TimeSpan(9, 0, 0), new TimeSpan(17, 0, 0)));
+            employees.Add("emp2", new Employee("Jane Smith", "emp2", "password", new TimeSpan(8, 30, 0), new TimeSpan(16, 30, 0)));
+
+            while (true)
+            {
+                Console.Write("Enter your employee ID: ");
+                string empId = Console.ReadLine();
+                Console.Write("Enter your password: ");
+                string password = Console.ReadLine();
+
+                if (employees.ContainsKey(empId) && employees[empId].Password == password)
+                {
+                    Employee employee = employees[empId];
+
+                    Console.WriteLine($"Welcome, {employee.Name}!");
+                    Console.WriteLine($"Your shift timing: {employee.StartTime} - {employee.EndTime}");
+
+                    // Simulate marking attendance
+                    TimeSpan currentTime = DateTime.Now.TimeOfDay;
+                    if (currentTime >= employee.StartTime && currentTime <= employee.EndTime)
+                    {
+                        Console.WriteLine("Attendance marked.");
+                        employee.MarkAttendance(currentTime);
+
+                        // Check for break time
+                        TimeSpan breakStartTime = employee.StartTime.Add(employee.WorkedHours);
+                        TimeSpan breakEndTime = breakStartTime.Add(TimeSpan.FromMinutes(30));
+
+                        if (currentTime >= breakStartTime && currentTime <= breakEndTime)
+                        {
+                            Console.WriteLine("You are currently on a break.");
+                        }
+                        else if (currentTime > breakEndTime)
+                        {
+                            Console.WriteLine("Break time is over.");
+                        }
+                        else
+                        {
+                            // Check for extra hours
+                            if (employee.WorkedHours > TimeSpan.FromHours(8))
+                            {
+                                TimeSpan extraHours = employee.WorkedHours - TimeSpan.FromHours(8);
+                                Console.WriteLine($"You've worked {extraHours.TotalHours} extra hours.");
+                                Console.WriteLine("Applying Overtime (OD) rules...");
+                                // Apply your overtime calculation logic here
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("You are not within your shift timings.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Invalid employee ID or password. Please try again.");
+                }
+            }
+        }
+    }
+
+    class Employee
+    {
+        public string Name { get; }
+        public string EmployeeId { get; }
+        public string Password { get; }
+        public TimeSpan StartTime { get; }
+        public TimeSpan EndTime { get; }
+        public TimeSpan WorkedHours { get; private set; }
+
+        public Employee(string name, string employeeId, string password, TimeSpan startTime, TimeSpan endTime)
+        {
+            Name = name;
+            EmployeeId = employeeId;
+            Password = password;
+            StartTime = startTime;
+            EndTime = endTime;
+            WorkedHours = TimeSpan.Zero;
+        }
+
+        public void MarkAttendance(TimeSpan currentTime)
+        {
+            WorkedHours = currentTime - StartTime;
+        }
+    }
+}
