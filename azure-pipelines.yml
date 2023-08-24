@@ -8,62 +8,64 @@ trigger:
 
 pool:
   vmImage: 'windows-latest' 
+jobs:
+- job: Build
+  displayName: 'Build and Test'
+  steps:
+  - task: UseDotNet@2
+    inputs:
+      packageType: 'sdk'
+      version: '6.x' 
+      installationPath: $(Agent.ToolsDirectory)/dotnet
 
-steps:
-- task: UseDotNet@2
-  inputs:
-    packageType: 'sdk'
-    version: '6.x' 
-    installationPath: $(Agent.ToolsDirectory)/dotnet
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: 'restore'
+      projects: '**/*.csproj'
+      feedsToUse: 'select'
+      arguments: '--configuration Release'
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'restore'
-    projects: '**/*.csproj'
-    feedsToUse: 'select'
-    arguments: '--configuration Release'
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: 'build'
+      projects: '**/*.csproj'
+      arguments: '--configuration Release'
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'build'
-    projects: '**/*.csproj'
-    arguments: '--configuration Release'
+  - script: dotnet test --configuration Release --no-restore
+    displayName: 'Run Tests'
 
-- script: dotnet test --configuration Release --no-restore
-  displayName: 'Run Tests'
+  - script: dotnet publish --configuration Release --output $(Build.ArtifactStagingDirectory)/publish
+    displayName: 'Publish Application'
 
-- script: dotnet publish --configuration Release --output $(Build.ArtifactStagingDirectory)/publish
-  displayName: 'Publish Application'
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/publish'
+      includeRootFolder: false
+      archiveType: 'zip'
+      archiveFile: $(Build.ArtifactStagingDirectory)/app.zip
+      replaceExistingArchive: true
+    displayName: 'Archive Application'
 
-- task: ArchiveFiles@2
-  inputs:
-    rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/publish'
-    includeRootFolder: false
-    archiveType: 'zip'
-    archiveFile: $(Build.ArtifactStagingDirectory)/app.zip
-    replaceExistingArchive: true
-  displayName: 'Archive Application'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)/app.zip'
+      ArtifactName: 'drop'
+      publishLocation: 'Container'
+    displayName: 'Publish Artifact'
 
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)/app.zip'
-    ArtifactName: 'drop'
-    publishLocation: 'Container'
-  displayName: 'Publish Artifact'
-
-- task: AzureRmWebAppDeployment@4
-  inputs:
-    ConnectionType: 'AzureRM'
-    azureSubscription: 'Visual Studio Enterprise Subscription – MPN(9aa09752-a676-4df1-8cf9-02cefca9f960)'
-    appType: 'webApp'
-    WebAppName: 'myweb-app1'
-    packageForLinux: '$(Build.ArtifactStagingDirectory)/app.zip'
-    enableCustomDeployment: true
-    DeploymentType: 'webDeploy'
-  displayName: 'Deploy to Azure Web App'
+  - task: AzureRmWebAppDeployment@4
+    inputs:
+      ConnectionType: 'AzureRM'
+      azureSubscription: 'Visual Studio Enterprise Subscription – MPN(9aa09752-a676-4df1-8cf9-02cefca9f960)'
+      appType: 'webApp'
+      WebAppName: 'myweb-app1'
+      packageForLinux: '$(Build.ArtifactStagingDirectory)/app.zip'
+      enableCustomDeployment: true
+      DeploymentType: 'webDeploy'
+    displayName: 'Deploy to Azure Web App'
 
 
-- script: |
+  - script: |
     $backupDir = "D:\Backup\$(Build.DefinitionName)_$(Build.BuildId)"
     if (Test-Path $backupDir) {
       Remove-Item -Recurse -Force $backupDir
