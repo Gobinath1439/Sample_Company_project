@@ -1,0 +1,38 @@
+public class Employee
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public decimal Salary { get; set; }
+}
+
+public class HikeCalculator
+{
+    public decimal CalculateHike(decimal currentSalary, decimal percentage)
+    {
+        return currentSalary + (currentSalary * percentage / 100);
+    }
+}
+
+using System;
+
+namespace HikeCalculatorApp
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Employee employee1 = new Employee { Id = 1, Name = "John Doe", Salary = 50000 };
+            Employee employee2 = new Employee { Id = 2, Name = "Jane Smith", Salary = 60000 };
+
+            HikeCalculator hikeCalculator = new HikeCalculator();
+
+            decimal hikePercentage = 10; // Example: 10% hike
+
+            decimal newSalary1 = hikeCalculator.CalculateHike(employee1.Salary, hikePercentage);
+            decimal newSalary2 = hikeCalculator.CalculateHike(employee2.Salary, hikePercentage);
+
+            Console.WriteLine($"Employee: {employee1.Name}, Old Salary: {employee1.Salary:C}, New Salary: {newSalary1:C}");
+            Console.WriteLine($"Employee: {employee2.Name}, Old Salary: {employee2.Salary:C}, New Salary: {newSalary2:C}");
+        }
+    }
+}
