@@ -4,66 +4,68 @@
 # https://aka.ms/yaml
 
 trigger:
- branches:
-   include:
-     - '*'
+- main 
 
-jobs:
-- job: BuildTestPublishDeployBackup
-  pool:
-    vmImage: 'windows-latest'
+pool:
+  vmImage: 'windows-latest' 
 
-  steps:
-  - task: UseDotNet@2
-    inputs:
-      packageType: 'sdk'
-      installationPath: $(Agent.ToolsDirectory)/dotnet
+steps:
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: '6.x' 
+    installationPath: $(Agent.ToolsDirectory)/dotnet
 
-  - task: DotNetCoreCLI@2
-    displayName: 'Build'
-    inputs:
-      command: 'build'
-      projects: '**/*.csproj'
-      arguments: '--configuration Release'
+- script: dotnet restore
+  displayName: 'Restore Dependencies'
 
-  - task: DotNetCoreCLI@2
-    displayName: 'Test'
-    inputs:
-      command: 'test'
-      projects: '**/*Tests.csproj'
-      arguments: '--configuration Release'
+- script: dotnet build --configuration Release --no-restore
+  displayName: 'Build Solution'
 
-  - task: DotNetCoreCLI@2
-    displayName: 'Publish'
-    inputs: 
-      command: 'publish'
-      publishWebProjects: true
-      arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)'
-      zipAfterPublish: true
+- script: dotnet test --configuration Release --no-restore
+  displayName: 'Run Tests'
 
-  - task: ArchiveFiles@2
-    inputs:
-      rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
-      includeRootFolder: false
-      archiveType: 'zip'
-      archiveFile: '$(Build.ArtifactStagingDirectory)\$(Build.BuildId)_AzDevOpsBackup.zip'
-      replaceExistingArchive: true
-    displayName: 'Create Backup Zip'
+- script: dotnet publish --configuration Release --output $(Build.ArtifactStagingDirectory)/publish
+  displayName: 'Publish Application'
 
-  - task: AzureRmWebAppDeployment@4
-    inputs:
-      ConnectionType: 'AzureRM'
-      azureSubscription: 'Visual Studio Enterprise Subscription – MPN(9aa09752-a676-4df1-8cf9-02cefca9f960)'
-      appType: 'webApp'
-      WebAppName: 'myweb-app1'
-      packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
-      enableCustomDeployment: true
-      DeploymentType: 'webDeploy'
-      TakeAppOfflineFlag: true
-    displayName: 'Deploy Application'
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/publish'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: $(Build.ArtifactStagingDirectory)/app.zip
+    replaceExistingArchive: true
+  displayName: 'Archive Application'
 
-  - powershell: |
-      $backupDir = "D:\Backup"
-      $backupFile = "$(Build.ArtifactStagingDirectory)\$(Build.BuildId)_AzDevOpsBackup.zip"
-      Copy-Item -Path $backupFile -Destination $backupDir
-    displayName: 'Backup to D: Drive'
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/app.zip'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
+  displayName: 'Publish Artifact'
+
+- task: AzureRmWebAppDeployment@4
+  inputs:
+    ConnectionType: 'AzureRM'
+    azureSubscription: 'Visual Studio Enterprise Subscription – MPN(9aa09752-a676-4df1-8cf9-02cefca9f960)'
+    appType: 'webApp'
+    WebAppName: 'myweb-app1'
+    packageForLinux: '$(Build.ArtifactStagingDirectory)/app.zip'
+    enableCustomDeployment: true
+    DeploymentType: 'webDeploy'
+  displayName: 'Deploy to Azure Web App'
+
+
+- script: |
+    $backupDir = "D:\Backup\$(Build.DefinitionName)_$(Build.BuildId)"
+    if (Test-Path $backupDir) {
+      Remove-Item -Recurse -Force $backupDir
+    }
+    Copy-Item -Path "D:\home\site\wwwroot\*" -Destination $backupDir -Recurse
+  displayName: 'Backup Previous Version'
+
+- powershell: |
+    $backupDir = "D:\Backup\$(Build.DefinitionName)_$(Build.BuildId)"
+    Remove-Item -Recurse -Force "D:\home\site\wwwroot\*"
+    Copy-Item -Path "$(Build.ArtifactStagingDirectory)/publish/*" -Destination "D:\home\site\wwwroot\" -Recurse
+  displayName: 'Deploy Updated Version'
