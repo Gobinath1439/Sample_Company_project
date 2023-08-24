@@ -81,4 +81,4 @@ steps:
           $backupPath = Join-Path $backupDir $backupFileName
       }
       Copy-Item -Path $backupFile -Destination $backupPath
-    displayName: 'Backup to D: Drive'
+  displayName: 'Backup to D: Drive'
