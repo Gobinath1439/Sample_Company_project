@@ -1,0 +1,55 @@
+using System;
+
+namespace CompanyLoginApp
+{
+    class Program
+    {
+        static bool isLoggedIn = false;
+        static string loggedInUser = "";
+
+        static void Main(string[] args)
+        {
+            while (true)
+            {
+                if (!isLoggedIn)
+                {
+                    Console.Write("Enter your username: ");
+                    string username = Console.ReadLine();
+                    Console.Write("Enter your password: ");
+                    string password = Console.ReadLine();
+
+                    if (AuthenticateUser(username, password))
+                    {
+                        isLoggedIn = true;
+                        loggedInUser = username;
+                        Console.WriteLine($"Welcome, {loggedInUser}!");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid username or password. Please try again.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"You are logged in as {loggedInUser}.");
+                    Console.Write("Do you want to log out? (yes/no): ");
+                    string response = Console.ReadLine();
+                    if (response.ToLower() == "yes")
+                    {
+                        isLoggedIn = false;
+                        loggedInUser = "";
+                        Console.WriteLine("Logged out successfully.");
+                    }
+                }
+            }
+        }
+
+        static bool AuthenticateUser(string username, string password)
+        {
+            // In a real application, you would perform proper authentication logic here,
+            // such as checking against a database or an authentication service.
+            // For the example, we'll just consider "user" and "password" as valid credentials.
+            return username == "user" && password == "password";
+        }
+    }
+}
