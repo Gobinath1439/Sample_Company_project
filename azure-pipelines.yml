@@ -16,11 +16,17 @@ steps:
     version: '6.x' 
     installationPath: $(Agent.ToolsDirectory)/dotnet
 
-- script: dotnet restore
-  displayName: 'Restore Dependencies'
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'restore'
+    projects: '**/*.csproj'
+    feedsToUse: 'select'
 
-- script: dotnet build --configuration Release --no-restore
-  displayName: 'Build Solution'
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'build'
+    projects: '**/*.csproj'
+    arguments: '--configuration Release'
 
 - script: dotnet test --configuration Release --no-restore
   displayName: 'Run Tests'
@@ -65,7 +71,14 @@ steps:
   displayName: 'Backup Previous Version'
 
 - powershell: |
-    $backupDir = "D:\Backup\$(Build.DefinitionName)_$(Build.BuildId)"
-    Remove-Item -Recurse -Force "D:\home\site\wwwroot\*"
-    Copy-Item -Path "$(Build.ArtifactStagingDirectory)/publish/*" -Destination "D:\home\site\wwwroot\" -Recurse
-  displayName: 'Deploy Updated Version'
+      $backupDir = "D:\Backup"
+      $backupFile = "$(Build.ArtifactStagingDirectory)\$(Build.BuildId)_AzDevOpsBackup.zip"
+      $backupFileName = "$(Build.BuildId)_AzDevOpsBackup.zip"
+      $backupPath = Join-Path $backupDir $backupFileName
+      if (Test-Path $backupPath) {
+          $timestamp = Get-Date -Format "yyyyMMddHHmmss"
+          $backupFileName = "$timestamp" + "_" + $backupFileName
+          $backupPath = Join-Path $backupDir $backupFileName
+      }
+      Copy-Item -Path $backupFile -Destination $backupPath
+    displayName: 'Backup to D: Drive'
