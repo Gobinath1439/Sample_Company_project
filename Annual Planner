@@ -1,0 +1,32 @@
+using System;
+using System.Collections.Generic;
+
+namespace HolidayCalendarApp
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            List<Holiday> holidayCalendar = new List<Holiday>();
+
+            // Government holidays
+            holidayCalendar.Add(new Holiday { Name = "New Year's Day", Date = new DateTime(2023, 1, 1), Type = HolidayType.Government });
+            holidayCalendar.Add(new Holiday { Name = "Independence Day", Date = new DateTime(2023, 8, 15), Type = HolidayType.Government });
+
+            // Optional holidays
+            holidayCalendar.Add(new Holiday { Name = "Employee's Birthday", Date = new DateTime(2023, 6, 10), Type = HolidayType.Optional });
+
+            // Festival holidays
+            holidayCalendar.Add(new Holiday { Name = "Diwali", Date = new DateTime(2023, 11, 4), Type = HolidayType.Festival });
+            holidayCalendar.Add(new Holiday { Name = "Christmas", Date = new DateTime(2023, 12, 25), Type = HolidayType.Festival });
+
+            // Display holidays
+            Console.WriteLine("Company Holiday Calendar");
+            Console.WriteLine("=======================");
+            foreach (var holiday in holidayCalendar)
+            {
+                Console.WriteLine($"{holiday.Date:yyyy-MM-dd}: {holiday.Name} ({holiday.Type})");
+            }
+        }
+    }
+}
