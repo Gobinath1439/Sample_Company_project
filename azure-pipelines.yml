@@ -1,0 +1,69 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+ branches:
+   include:
+     - '*'
+
+jobs:
+- job: BuildTestPublishDeployBackup
+  pool:
+    vmImage: 'windows-latest'
+
+  steps:
+  - task: UseDotNet@2
+    inputs:
+      packageType: 'sdk'
+      installationPath: $(Agent.ToolsDirectory)/dotnet
+
+  - task: DotNetCoreCLI@2
+    displayName: 'Build'
+    inputs:
+      command: 'build'
+      projects: '**/*.csproj'
+      arguments: '--configuration Release'
+
+  - task: DotNetCoreCLI@2
+    displayName: 'Test'
+    inputs:
+      command: 'test'
+      projects: '**/*Tests.csproj'
+      arguments: '--configuration Release'
+
+  - task: DotNetCoreCLI@2
+    displayName: 'Publish'
+    inputs: 
+      command: 'publish'
+      publishWebProjects: true
+      arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)'
+      zipAfterPublish: true
+
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
+      includeRootFolder: false
+      archiveType: 'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)\$(Build.BuildId)_AzDevOpsBackup.zip'
+      replaceExistingArchive: true
+    displayName: 'Create Backup Zip'
+
+  - task: AzureRmWebAppDeployment@4
+    inputs:
+      ConnectionType: 'AzureRM'
+      azureSubscription: 'Visual Studio Enterprise Subscription – MPN(9aa09752-a676-4df1-8cf9-02cefca9f960)'
+      appType: 'webApp'
+      WebAppName: 'myweb-app1'
+      packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
+      enableCustomDeployment: true
+      DeploymentType: 'webDeploy'
+      TakeAppOfflineFlag: true
+    displayName: 'Deploy Application'
+
+  - powershell: |
+      $backupDir = "D:\Backup"
+      $backupFile = "$(Build.ArtifactStagingDirectory)\$(Build.BuildId)_AzDevOpsBackup.zip"
+      Copy-Item -Path $backupFile -Destination $backupDir
+    displayName: 'Backup to D: Drive'
