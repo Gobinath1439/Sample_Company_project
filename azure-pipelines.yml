@@ -64,15 +64,7 @@ jobs:
       DeploymentType: 'webDeploy'
     displayName: 'Deploy to Azure Web App'
 
-  - script: |
-    $backupDir = "D:\Backup\$(Build.DefinitionName)_$(Build.BuildId)"
-    if (Test-Path $backupDir) {
-    Remove-Item -Recurse -Force $backupDir
-    }
-    Copy-Item -Path "D:\home\site\wwwroot\*" -Destination $backupDir -Recurse
-  displayName: 'Backup Previous Version'
-
-- powershell: |
+  - powershell: |
       $backupDir = "D:\Backup"
       $backupFile = "$(Build.ArtifactStagingDirectory)\$(Build.BuildId)_AzDevOpsBackup.zip"
       $backupFileName = "$(Build.BuildId)_AzDevOpsBackup.zip"
@@ -83,4 +75,4 @@ jobs:
           $backupPath = Join-Path $backupDir $backupFileName
       }
       Copy-Item -Path $backupFile -Destination $backupPath
-  displayName: 'Backup to D: Drive'
+    displayName: 'Backup to D: Drive'
